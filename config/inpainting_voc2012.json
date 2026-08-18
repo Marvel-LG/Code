@@ -1,0 +1,283 @@
+{
+  "name": "inpainting_voc2012",
+  // experiments name
+  "gpu_ids": [
+    0
+  ],
+  // gpu ids list, default is single 0
+  "seed": -1,
+  // random seed, seed <0 represents randomization not used
+  "finetune_norm": false,
+  // find the parameters to optimize
+
+  "path": {
+    //设置文件路径，experiments中的路径安排
+    "base_dir": "experiments",
+    // base path for all log except resume_state
+    "code": "code",
+    // code backup
+    "results": "results",
+    "checkpoint": "checkpoint",
+    "resume_state_A": "checkpoint/A_model/",
+    "resume_state_B": "checkpoint/B_model/",
+    "resume_state_MAP": "checkpoint/MAP_model/",
+    "resume_state_D": "checkpoint/D_model/",
+    "resume_state_AandMAP":"checkpoint/AandMAP_model/"
+  },
+  "datasets": {
+    // train or test
+    "train": {
+      "which_dataset": {
+        // import designated dataset using arguments
+        "name": [
+          "data.dataset",
+          "InpaintDataset"
+//          "RealDatasets"
+        ],
+        // import Dataset() class / function(not recommend) from data.dataset.py (default is [data.dataset.py])
+        "args": {
+          // arguments to initialize dataset
+          "data_root": "datasets"
+        }
+      },
+      "dataloader": {
+        "validation_split": 0,
+        // 评价数据集张数；percent or number
+        "args": {
+          // arguments to initialize train_dataloader
+          "batch_size": 1,
+          // batch size in each gpu
+          "num_workers": 2,
+          "shuffle": true,
+          "pin_memory": true,
+          "drop_last": true
+        },
+        "val_args": {
+          // arguments to initialize valid_dataloader, will overwrite the parameters in train_dataloader
+          "batch_size": 1,
+          // batch size in each gpu
+          "num_workers": 2,
+          "shuffle": false,
+          "pin_memory": true,
+          "drop_last": false
+        }
+      }
+    },
+    "test": {
+      //测试的相关数据
+      "which_dataset": {
+        "name": "InpaintDataset",
+//        "name": "RealDatasets",
+
+        // import Dataset() class / function(not recommend) from default file
+        "args": {
+          "data_root": "datasets"
+        }
+      },
+      "dataloader": {
+        "args": {
+          "batch_size": 1,
+          "num_workers": 2,
+          "pin_memory": true
+        }
+      }
+    }
+  },
+  "model": {
+    // networks/metrics/losses/optimizers/lr_schedulers is a list and model is a dict
+    "which_model": {
+      // import designated  model(trainer) using arguments
+      "name": [
+        "models.model",
+        "Palette"
+      ],
+      // import Model() class / function(not recommend) from models.model.py (default is [models.model.py])
+      "args": {
+        "sample_num": 10,
+        // process of each image
+        "task": "inpainting",
+        "optimizers": {
+          "Gen": {
+            "lr": 1e-4,
+            "weight_decay": 0,
+            "betas": [
+              0,
+              0.9
+            ]
+          },
+          "Dis": {
+            "lr": 4e-4,
+            "weight_decay": 0,
+            "betas": [
+              0,
+              0.9
+            ]
+          }
+        }
+        //5e-5,5e-6
+      }
+    },
+    "which_networks": [
+      // import designated list of networks using arguments
+      {
+        "name": [
+          "models.network",
+          "Network"
+        ],
+        //import Network() class / function(not recommend) from default file (default is [models/network.py])
+        "args": {
+          // arguments to initialize network
+          "init_type": "kaiming",
+          // method can be [normal | xavier| xavier_uniform | kaiming | orthogonal], default is kaiming
+          "module_name": "guided_diffusion",
+          // sr3 | guided_diffusion
+          "sample_function": "ddim",
+          //采样方式
+          "respacing": "ddim50",
+          //0->T
+          "pattern": "MAP",
+          //MAP\A\B\D\NP
+          "inpaint_mask": true,
+          //true//是否包含破损
+          "model_parameter": {
+            "detection": {
+              "in_channels": 3,
+              "out_channels": 1,
+              "depth": 4,
+              "conv_num": 4,
+              "wf": 6,
+              "padding": true,
+              "batch_norm": true,
+              "up_mode": "upsample",
+              "with_tanh": false,
+              "sync_bn": false,
+              "antialiasing": true
+            },
+//            "unet_A": {
+//              "in_channel": 4,
+//              "out_channel": 3,
+//              "inner_channel": 128,
+//              "channel_mults": [
+//                1,
+//                2,
+//                4
+//              ],
+//              "attn_res": [
+//              ],
+//              "num_head_channels": 32,
+//              "res_blocks": 2,
+//              "dropout": 0.2,
+//              "image_size": 256,
+//              "embed_dim": 128
+//            },
+//            "unet_A": {
+//              "double_z":false,
+//              "z_channels": 256,
+//              "resolution": 256,
+//              "in_channels": 6,
+//              "out_ch": 3,
+//              "ch": 64,
+//              "ch_mult": [
+//                1,
+//                2,
+//                4
+//              ],
+//              "num_res_blocks": 2,
+//              "attn_resolutions": [],
+//              "dropout": 0.0,
+//              "embed_dim": 64,
+//              "using_class": true
+//            },
+            "unet_A": {
+              "input_nc": 3,
+              "output_nc": 3,
+              "ngf": 64,
+              "k_size": 4,
+              "n_downsampling": 3
+            },
+            "unet_B": {
+              "in_channel": 4,
+              "out_channel": 3,
+              "inner_channel": 4,
+              "channel_mults": [
+                1,
+                2,
+                4
+              ],
+              "attn_res": [
+              ],
+              "num_head_channels": 32,
+              "res_blocks": 2,
+              "dropout": 0.2,
+              "image_size": 256,
+              "embed_dim": 128
+            },
+            "mapping": {
+              "in_channel": 64,
+              "out_channel": 3,
+              "inner_channel": 128,
+              "channel_mults": [
+                1,
+                2,
+                4
+              ],
+              "encoder_len": 3,
+              "upsample_channle" : 512,
+              "attn_res": [
+              ],
+              "num_head_channels": 32,
+              "res_blocks": 2,
+              "dropout": 0.2,
+              "image_size": 64
+            }
+          },
+          "beta_schedule": {
+            "train": {
+              "schedule": "cosine",
+              "n_timestep": 1000,
+              "linear_start": 1e-4,
+              "linear_end": 0.09
+            },
+            "test": {
+              "schedule": "cosine",
+              "n_timestep": 1000,
+              "linear_start": 1e-4,
+              "linear_end": 0.09
+            }
+          }
+        }
+      }
+    ],
+    "which_losses": [
+      // import designated list of losses without arguments
+      "mse_loss"
+      // import mse_loss() function/class from default file (default is [models/losses.py]), equivalent to { "name": "mse_loss", "args":{}}
+    ],
+    "which_metrics": [
+      // import designated list of metrics without arguments
+      "mae"
+      // import mae() function/class from default file (default is [models/metrics.py]), equivalent to { "name": "mae", "args":{}}
+    ]
+  },
+  "train": {
+    // arguments for basic training
+    "n_epoch": 1e8,
+    // max epochs, not limited now；epoche次数限制
+    "n_iter": 1e8,
+    // max interations；迭代次数限制
+    "val_epoch": 1,
+    // valdation every specified number of epochs；评价间隔轮次
+    "save_checkpoint_epoch": 1,
+    //保存断点轮次
+    "log_iter": 1e2
+    // log every specified number of iterations；记录数据迭代间隔
+  },
+  "debug": {
+    // arguments in debug mode, which will replace arguments in train
+    "val_epoch": 1,
+    "save_checkpoint_epoch": 1,
+    "log_iter": 1,
+    "debug_split": 50
+    // percent or number, change the size of dataloder to debug_split.
+  }
+}

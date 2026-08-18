@@ -1,0 +1,10 @@
+numpy
+pandas
+tqdm
+scipy
+opencv-python
+clean-fid
+matplotlib
+imutils
+dominate
+einops
