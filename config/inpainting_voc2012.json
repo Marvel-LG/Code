@@ -11,7 +11,6 @@
   // find the parameters to optimize
 
   "path": {
-    //设置文件路径，experiments中的路径安排
     "base_dir": "experiments",
     // base path for all log except resume_state
     "code": "code",
@@ -42,7 +41,6 @@
       },
       "dataloader": {
         "validation_split": 0,
-        // 评价数据集张数；percent or number
         "args": {
           // arguments to initialize train_dataloader
           "batch_size": 1,
@@ -132,13 +130,11 @@
           "module_name": "guided_diffusion",
           // sr3 | guided_diffusion
           "sample_function": "ddim",
-          //采样方式
           "respacing": "ddim50",
           //0->T
           "pattern": "MAP",
           //MAP\A\B\D\NP
           "inpaint_mask": true,
-          //true//是否包含破损
           "model_parameter": {
             "detection": {
               "in_channels": 3,
@@ -262,15 +258,10 @@
   "train": {
     // arguments for basic training
     "n_epoch": 1e8,
-    // max epochs, not limited now；epoche次数限制
     "n_iter": 1e8,
-    // max interations；迭代次数限制
     "val_epoch": 1,
-    // valdation every specified number of epochs；评价间隔轮次
     "save_checkpoint_epoch": 1,
-    //保存断点轮次
     "log_iter": 1e2
-    // log every specified number of iterations；记录数据迭代间隔
   },
   "debug": {
     // arguments in debug mode, which will replace arguments in train
